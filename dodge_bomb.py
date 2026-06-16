@@ -154,12 +154,24 @@ def main():
         # 爆弾の移動と跳ね返り
         bb_rct.move_ip(avx, avy)
         yoko, tate = check_bound(bb_rct)
+        
         if not yoko:
             vx *= -1
+            # 【追加】横方向のめり込みを強制的に解消する
+            if bb_rct.left < 0:            # 左壁を突き抜けていたら
+                bb_rct.left = 0            # 左端ピッタリに押し戻す
+            elif bb_rct.right > WIDTH:     # 右壁を突き抜けていたら
+                bb_rct.right = WIDTH       # 右端ピッタリに押し戻す
+                
         if not tate:
             vy *= -1    
+            # 【追加】縦方向のめり込みを強制的に解消する
+            if bb_rct.top < 0:             # 上壁を突き抜けていたら
+                bb_rct.top = 0             # 上端ピッタリに押し戻す
+            elif bb_rct.bottom > HEIGHT:   # 下壁を突き抜けていたら
+                bb_rct.bottom = HEIGHT     # 下端ピッタリに押し戻す
+                
         screen.blit(bb_img, bb_rct)
-
         # 衝突判定
         if kk_rct.colliderect(bb_rct):
             gameover(screen)
