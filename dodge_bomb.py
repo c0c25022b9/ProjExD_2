@@ -1,3 +1,4 @@
+import math  # ベクトルの距離計算（平方根）に使用
 import os
 import random
 import sys
@@ -99,6 +100,33 @@ def init_kk_imgs() -> dict[tuple[int, int], pg.Surface]:
     }
 
 
+def calc_orientation(org: pg.Rect, dst: pg.Rect, current_xy: tuple[float, float]) -> tuple[float, float]:
+    """
+    追加機能4: 爆弾がこうかとんに向かって移動するベクトルを計算する関数
+    引数 org: 爆弾のRect
+    引数 dst: こうかとんのRect
+    引数 current_xy: 現在の爆弾の速度ベクトル (vx, vy)
+    戻り値: 距離が300以上ならノルム√50に正規化した追従ベクトル、300未満なら現在のベクトル（慣性）
+    """
+    # org(爆弾)からdst(こうかとん)への差ベクトルを求める
+    dx = dst.centerx - org.centerx
+    dy = dst.centery - org.centery
+    
+    # 差ベクトルのノルム（距離）を計算
+    norm = math.sqrt(dx**2 + dy**2)
+    
+    # 距離が300未満の場合は、計算前の方向ベクトル（慣性）を返す
+    if norm < 300:
+        return current_xy
+        
+    # 差ベクトルのノルムが√50になるように正規化する
+    target_norm = math.sqrt(50)
+    vx = dx * (target_norm / norm)
+    vy = dy * (target_norm / norm)
+    
+    return vx, vy
+
+
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -111,7 +139,7 @@ def main():
     kk_rct.center = 300, 200
 
     bb_imgs, bb_accs = init_bb_imgs()
-    vx, vy = +5, +5
+    vx, vy = +5.0, +5.0  # 正規化で小数になるため、あらかじめfloatで定義しておく
     
     bb_img = bb_imgs[0]
     bb_rct = bb_img.get_rect()
@@ -142,6 +170,10 @@ def main():
         kk_img = kk_imgs[tuple(sum_mv)]
         screen.blit(kk_img, kk_rct)
         
+        # --- 追加機能4: 追従型爆弾のベクトル更新 ---
+        # while文の中で関数を呼び出し、爆弾からこうかとんへのベクトルを取得する
+        vx, vy = calc_orientation(bb_rct, kk_rct, (vx, vy))
+        
         # 時間経過による爆弾の拡大・加速
         idx = min(tmr // 500, 9)
         avx = vx * bb_accs[idx]
@@ -157,21 +189,22 @@ def main():
         
         if not yoko:
             vx *= -1
-            # 【追加】横方向のめり込みを強制的に解消する
-            if bb_rct.left < 0:            # 左壁を突き抜けていたら
-                bb_rct.left = 0            # 左端ピッタリに押し戻す
-            elif bb_rct.right > WIDTH:     # 右壁を突き抜けていたら
-                bb_rct.right = WIDTH       # 右端ピッタリに押し戻す
+            # 横方向のめり込みを強制的に解消する
+            if bb_rct.left < 0:            
+                bb_rct.left = 0            
+            elif bb_rct.right > WIDTH:     
+                bb_rct.right = WIDTH       
                 
         if not tate:
             vy *= -1    
-            # 【追加】縦方向のめり込みを強制的に解消する
-            if bb_rct.top < 0:             # 上壁を突き抜けていたら
-                bb_rct.top = 0             # 上端ピッタリに押し戻す
-            elif bb_rct.bottom > HEIGHT:   # 下壁を突き抜けていたら
-                bb_rct.bottom = HEIGHT     # 下端ピッタリに押し戻す
+            # 縦方向のめり込みを強制的に解消する
+            if bb_rct.top < 0:             
+                bb_rct.top = 0             
+            elif bb_rct.bottom > HEIGHT:   
+                bb_rct.bottom = HEIGHT     
                 
         screen.blit(bb_img, bb_rct)
+        
         # 衝突判定
         if kk_rct.colliderect(bb_rct):
             gameover(screen)
