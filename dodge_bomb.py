@@ -24,6 +24,7 @@ def main():
     kk_rct.center = 300, 200
 
     bb_img = pg.Surface((20, 20))
+    bb_img.set_colorkey((0, 0, 0))
     pg.draw.circle(bb_img, (255, 0, 0), (10, 10), 10)
     bb_rct = bb_img.get_rect()
     bb_rct.center = random.randint(0, WIDTH), random.randint(0, HEIGHT)
