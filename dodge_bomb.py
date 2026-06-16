@@ -1,7 +1,8 @@
 import os
-import sys
-import pygame as pg
 import random
+import sys
+import time
+import pygame as pg
 
 
 WIDTH, HEIGHT = 1100, 650
@@ -13,7 +14,41 @@ DELTA = {
     pg.K_LEFT:  (-5, 0),
     pg.K_RIGHT: (+5, 0),
 }
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+def gameover(screen: pg.Surface) -> None:
+    """
+    ゲームオーバー画面を表示する関数。
+    画面を完全にブラックアウトし、中央に大きな「Game Over」の文字、そのすぐ左右に泣いているこうかとんを配置して5秒間表示する。
+    引数 screen: 描画対象の画面Surface
+    """
+
+    # 暗転する画面
+    black_out = pg.Surface((WIDTH, HEIGHT))
+    black_out.fill((0, 0, 0))
+    black_out.set_alpha(230)
+
+    # "Game Over"の設定
+    font = pg.font.Font(None, 80)
+    txt_surface = font.render("Game Over", True, (255, 255, 255))
+    txt_rect = txt_surface.get_rect()
+    txt_rect.center = WIDTH // 2, HEIGHT // 2
+    
+    # 泣くこうかとん
+    cry_kk_img = pg.transform.rotozoom(pg.image.load("fig/8.png"), 0, 0.9)
+    cry_kk_rct1 = cry_kk_img.get_rect()
+    cry_kk_rct1.center = WIDTH // 2 - 200, HEIGHT // 2
+    cry_kk_rct2 = cry_kk_img.get_rect()
+    cry_kk_rct2.center = WIDTH // 2 + 200, HEIGHT // 2
+    
+    # 暗い画面にテキストと画像を貼り付ける
+    black_out.blit(txt_surface, txt_rect)
+    black_out.blit(cry_kk_img, cry_kk_rct1)
+    black_out.blit(cry_kk_img, cry_kk_rct2)
+    
+    # 通常画面への反映
+    screen.blit(black_out, [0, 0])
+    pg.display.update()
+    time.sleep(5)
 
 def check_bound(rct: pg.Rect) -> tuple[bool, bool]:
     """
@@ -80,12 +115,19 @@ def main():
         if not tate:   # 縦方向のはみ出し
             vy *= -1    
         screen.blit(bb_img, bb_rct)
+
+        # 衝突したらgameover関数を呼び出す
+        if kk_rct.colliderect(bb_rct):
+            gameover(screen)
+            return
+
         pg.display.update()
         tmr += 1
         clock.tick(50)
 
 
 if __name__ == "__main__":
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     pg.init()
     main()
     pg.quit()
